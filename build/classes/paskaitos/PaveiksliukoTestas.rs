@@ -1,0 +1,2 @@
+paskaitos.PiestiPaveiksla
+paskaitos.PaveiksliukoTestas

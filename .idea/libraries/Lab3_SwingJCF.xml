@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="Lab3_SwingJCF">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/dist/Lab3_SwingJCF.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

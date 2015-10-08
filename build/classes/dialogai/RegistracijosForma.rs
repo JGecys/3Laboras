@@ -1,0 +1,2 @@
+dialogai.RegistracijosForma
+dialogai.RegistracijaAuto
