@@ -7,12 +7,14 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
+import java.awt.List;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
-import java.util.Locale;
+import java.util.*;
 
 /**
  * Created by Jurgis on 2015-10-08.
@@ -24,7 +26,7 @@ public class Sasaja extends JFrame {
     private final JTextArea taInformacija = new JTextArea(20, 50);
     private final JScrollPane zona = new JScrollPane(taInformacija);
     private final JLabel laAntraste = new JLabel("Rezultatai");
-    private final JPanel paInfo = new JPanel();			// duomenų ir rezultatų panelis
+    private final JPanel paInfo = new JPanel();            // duomenų ir rezultatų panelis
     private JMenuItem miMarkė;
     private JMenuItem miKaina;
 
@@ -40,11 +42,12 @@ public class Sasaja extends JFrame {
         Locale.setDefault(Locale.US); // suvienodiname skaičių formatus
         Font f = new Font("Courier New", Font.PLAIN, 12); // Suvienodinam simbolių pločius (lygiavimui JTextArea elemente)
         taInformacija.setFont(f);
+        duomenys.setUpdateListener((tel -> taInformacija.append(tel.toString() + '\n')));
 
         meniuIdiegimas();
 
-        miMarkė.setEnabled(false);	// neaktyvi, nes nėra duomenų (failas nenuskaitytas)
-        miKaina.setEnabled(false);	// neaktyvi
+        miMarkė.setEnabled(false);    // neaktyvi, nes nėra duomenų (failas nenuskaitytas)
+        miKaina.setEnabled(false);    // neaktyvi
     }
 
     /**
@@ -53,28 +56,28 @@ public class Sasaja extends JFrame {
      */
     private void meniuIdiegimas() {
         setJMenuBar(meniuBaras);
-        JMenu mFailai = new JMenu( "Failai" );
+        JMenu mFailai = new JMenu("Failai");
         meniuBaras.add(mFailai);
-        JMenu mAuto	= new JMenu( "Automobilių apskaita" );
-        mAuto.setMnemonic( 'a' ); // Alt + a
+        JMenu mAuto = new JMenu("Telefonų apskaita");
+        mAuto.setMnemonic('a'); // Alt + a
         meniuBaras.add(mAuto);
-        JMenu mPagalba = new JMenu( "Pagalba" );
+        JMenu mPagalba = new JMenu("Pagalba");
         meniuBaras.add(mPagalba);
 
         //  Grupė  "Failai" :
-        JMenuItem miSkaityti = new JMenuItem( "Skaityti iš failo..." );
+        JMenuItem miSkaityti = new JMenuItem("Skaityti iš failo...");
         mFailai.add(miSkaityti);
         miSkaityti.addActionListener(this::veiksmaiSkaitantFailą);
         //miSkaityti.addActionListener((e) -> veiksmaiSkaitantFailą(e));  // galima kviesti ir taip
         //miSkaityti.addActionListener((e) -> veiksmaiSkaitantFailą());  // jei metodo antraštė be parametro, kviestume taip
-        JMenuItem miBaigti = new JMenuItem( "Pabaiga" );
-        miBaigti.setMnemonic( 'b' ); // Alt + b
+        JMenuItem miBaigti = new JMenuItem("Pabaiga");
+        miBaigti.setMnemonic('b'); // Alt + b
         mFailai.add(miBaigti);
         // kadangi išėjimo iš programos metodas trumpas, rašome vietoje
         miBaigti.addActionListener((ActionEvent e) -> System.exit(0));
 
         //	Grupė "Automobiliu apskaita"
-        miMarkė = new JMenuItem("Atranka pagal markę…");
+        miMarkė = new JMenuItem("Atranka pagal modelį…");
         mAuto.add(miMarkė);
         miMarkė.addActionListener(this::atrankaPagalMarke);
 
@@ -85,37 +88,39 @@ public class Sasaja extends JFrame {
             taInformacija.append("\n       SURIKIUOTA (pradinis sąrašas):\n");
             taInformacija.append(apskaita.toString());
         });
+        taInformacija.setEditable(false);
 
         //    Grupė  "Pagalba" :
-        JMenuItem miDokumentacija = new JMenuItem( "Paketo Dokumentacija" );
+        JMenuItem miDokumentacija = new JMenuItem("Paketo Dokumentacija");
         mPagalba.add(miDokumentacija);
         miDokumentacija.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F1,
-                ActionEvent.ALT_MASK));
-        miDokumentacija.addActionListener(new VeiksmaiDokumentacija() );
-        JMenuItem miGreitojiPagalba = new JMenuItem( "Greitoji Pagalba :-)" );
+                InputEvent.ALT_MASK));
+        miDokumentacija.addActionListener(new VeiksmaiDokumentacija());
+        JMenuItem miGreitojiPagalba = new JMenuItem("Greitoji Pagalba :-)");
         mPagalba.add(miGreitojiPagalba);
         miGreitojiPagalba.addActionListener((e) -> veiksmaiGreitojiPagalba());
 
-        JMenuItem miApie = new JMenuItem( "Apie programą ..." );
+        JMenuItem miApie = new JMenuItem("Apie programą ...");
         mPagalba.add(miApie);
         miApie.addActionListener((ActionEvent event) ->
-                JOptionPane.showMessageDialog( Sasaja.this,
+                JOptionPane.showMessageDialog(Sasaja.this,
                         "Demo programa - sąsaja su meniu\nVersija 2.1\n2014 spalis",
-                        "Apie...", JOptionPane.INFORMATION_MESSAGE ) );
+                        "Apie...", JOptionPane.INFORMATION_MESSAGE));
 
         // Sukuriamas JPanel elementas informacijai išvesti ir padedamas į JFrame langą.
-        paInfo.setLayout( new BorderLayout());
+        paInfo.setLayout(new BorderLayout());
         paInfo.add(laAntraste, BorderLayout.NORTH);
         paInfo.add(zona, BorderLayout.CENTER);
 
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // kad veiktų lango uždarymas ("kryžiukas")
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE); // kad veiktų lango uždarymas ("kryžiukas")
 
     } // Metodo meniuIdiegimas pabaiga
 
     /**
      * Metodas yra kviečiamas vykdant meniu punktą "Skaityti iš failo..."
-     * @param e	klasės ActionEvent objektas. Jis būtinas metodo pagal nuorodą (::) iškvietimui
-     *			(kviečiant šį metodą su lambda, jo antraštė gali būti ir be šio parametro).
+     *
+     * @param e klasės ActionEvent objektas. Jis būtinas metodo pagal nuorodą (::) iškvietimui
+     *          (kviečiant šį metodą su lambda, jo antraštė gali būti ir be šio parametro).
      */
     public void veiksmaiSkaitantFailą(ActionEvent e) {
         JFileChooser fc = new JFileChooser(".");  // "." tam, kad rodytų projekto katalogą
@@ -124,6 +129,7 @@ public class Sasaja extends JFrame {
         int rez = fc.showOpenDialog(Sasaja.this);
         if (rez == JFileChooser.APPROVE_OPTION) {
             // veiksmai, kai pasirenkamas atsakymas “Open"
+            taInformacija.setText("");
             if (!paInfo.isShowing()) {
                 // Jei JPanel objektas paInfo dar neįdėtas į JFrame
                 sasajosLangoTurinys = getContentPane();
@@ -132,16 +138,18 @@ public class Sasaja extends JFrame {
                 validate();
             }
 
+
             File f1 = fc.getSelectedFile();
-            duomenys.readFrom(f1, TelefonuDuomenys.Tipas.GAMINTOJAS);
-//            apskaita.loadAndPrint(f1, taInformacija);
+            duomenys.fromFile(f1);
+            SugrupuotiTelefonai sugrupuoti = new SugrupuotiTelefonai();
+            sugrupuoti.fromList(duomenys, SugrupuotiTelefonai.Tipas.GAMINTOJAS);
+            System.out.println(sugrupuoti);
 
-            duomenys.forEach(tel -> System.out.println(tel.toString()));
 
-            miMarkė.setEnabled(true);	// aktyvi - duomenys nuskaityti
+            miMarkė.setEnabled(true);    // aktyvi - duomenys nuskaityti
             miKaina.setEnabled(true);
         } else if (rez == JFileChooser.CANCEL_OPTION) {
-            JOptionPane.showMessageDialog( Sasaja.this, // kad rodyti sąsajos lango centre (null rodytų ekrano centre)
+            JOptionPane.showMessageDialog(Sasaja.this, // kad rodyti sąsajos lango centre (null rodytų ekrano centre)
                     "Skaitymo atsisakyta (paspaustas ESC arba Cancel)",
                     "Skaitymas - rašymas", JOptionPane.INFORMATION_MESSAGE);
         }
@@ -149,6 +157,7 @@ public class Sasaja extends JFrame {
 
     /**
      * Atrenka automobilius pagal pasirinktą jų markę. Markė įvedama įvedimo lange (JOptionPane.showInputDialog)
+     *
      * @param e klasės ActionEvent objektas.
      */
     public void atrankaPagalMarke(ActionEvent e) {
@@ -166,8 +175,8 @@ public class Sasaja extends JFrame {
         JPanel pa = new JPanel();
         pa.setLayout(new BorderLayout());
         JTable lentelė = new JTable();
-        String stulpeliuVardai[] = {"Modelis", "Metai", "Rida", "Kaina" };
-        DefaultTableModel lentelėsModelis = (DefaultTableModel)lentelė.getModel();
+        String stulpeliuVardai[] = {"Modelis", "Metai", "Rida", "Kaina"};
+        DefaultTableModel lentelėsModelis = (DefaultTableModel) lentelė.getModel();
         lentelė.setModel(lentelėsModelis);
         JScrollPane juosta = new JScrollPane(lentelė);
         pa.add(new JLabel("Atrinkti " + markė + " markės automobiliai:", SwingConstants.CENTER), BorderLayout.NORTH);
@@ -182,13 +191,13 @@ public class Sasaja extends JFrame {
             fr.add(pa);
             fr.setSize(300, 350);
             // Dėsim JTable lentelę į sąsajos lango centrą (kitaip padės į ekrano centrą):
-            Dimension dydis = Sasaja.this.getSize();	// sąsajos lango gydis
-            Point vieta = Sasaja.this.getLocation();	// sąsajos lango vieta (kairys-viršutinis kampas)
-            fr.setLocation((vieta.x + dydis.width/2) - fr.getSize().width/2,
-                    (vieta.y + dydis.height/2) - fr.getSize().height/2);
+            Dimension dydis = Sasaja.this.getSize();    // sąsajos lango gydis
+            Point vieta = Sasaja.this.getLocation();    // sąsajos lango vieta (kairys-viršutinis kampas)
+            fr.setLocation((vieta.x + dydis.width / 2) - fr.getSize().width / 2,
+                    (vieta.y + dydis.height / 2) - fr.getSize().height / 2);
             fr.setVisible(true);
         } else {
-            JOptionPane.showMessageDialog( Sasaja.this,
+            JOptionPane.showMessageDialog(Sasaja.this,
                     "<" + markė + "> markės automobilių nerasta.", "Atranka", JOptionPane.WARNING_MESSAGE);
 
         }
@@ -208,9 +217,9 @@ public class Sasaja extends JFrame {
         try {
             Process p = Runtime.getRuntime().exec(programa);
         } catch (IOException ex) {
-            JOptionPane.showMessageDialog( Sasaja.this,
+            JOptionPane.showMessageDialog(Sasaja.this,
                     "Vykdomasis failas <" + programa + "> nerastas",
-                    "Klaida", JOptionPane.ERROR_MESSAGE );
+                    "Klaida", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -222,30 +231,31 @@ public class Sasaja extends JFrame {
 
     private class VeiksmaiDokumentacija implements ActionListener {
         @Override
-        public void actionPerformed( ActionEvent event ) {
+        public void actionPerformed(ActionEvent event) {
             File f = null;
             try {
                 f = new File("dist\\javadoc\\index.html").getAbsoluteFile();
                 Desktop.getDesktop().open(f);
-                JOptionPane.showMessageDialog( Sasaja.this,
+                JOptionPane.showMessageDialog(Sasaja.this,
                         "Dokumentacija sėkmingai atidaryta naršyklės lange",
-                        "Informacija", JOptionPane.INFORMATION_MESSAGE );
+                        "Informacija", JOptionPane.INFORMATION_MESSAGE);
             } catch (IllegalArgumentException ex) {
-                JOptionPane.showMessageDialog( Sasaja.this,
+                JOptionPane.showMessageDialog(Sasaja.this,
                         "Dokumentacijos failas <" + f.toString() +
                                 "> nerastas(arba dokumentacija dar nesugeneruota)\n"
-                        , "Klaida", JOptionPane.ERROR_MESSAGE );
+                        , "Klaida", JOptionPane.ERROR_MESSAGE);
             } catch (IOException ex) {
-                JOptionPane.showMessageDialog( Sasaja.this,
+                JOptionPane.showMessageDialog(Sasaja.this,
                         "Dokumentacijos failo <" + f.toString() +
-                                "> atidaryti nepavyko", "Klaida", JOptionPane.ERROR_MESSAGE );
+                                "> atidaryti nepavyko", "Klaida", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
 
     /**
      * Programos paleidimo taškas: sukuriamas JFrame klasės vaiko (SasajaSuMeniu) objektas,
-     *  nustatomas lango dydis ir vieta ir langas parodomas ekrane (metodas setVisible).
+     * nustatomas lango dydis ir vieta ir langas parodomas ekrane (metodas setVisible).
+     *
      * @param args argumentų masyvas.
      */
     public static void main(String[] args) {
