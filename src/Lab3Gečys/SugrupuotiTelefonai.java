@@ -4,12 +4,15 @@ import Lab2Gečys.Telefonas;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.lang.reflect.Type;
 import java.util.*;
 
 /**
  * Created by Jurgis on 2015-10-08.
  */
-public class SugrupuotiTelefonai extends HashMap<String, List<Telefonas>> {
+public class SugrupuotiTelefonai {
+
+    private Map<String, List<Telefonas>> map;
 
     public enum Tipas {
         GAMINTOJAS,
@@ -19,14 +22,17 @@ public class SugrupuotiTelefonai extends HashMap<String, List<Telefonas>> {
 
     private Tipas mTipas;
 
-    public SugrupuotiTelefonai() {
+    public SugrupuotiTelefonai(Class<? extends Map> C) {
         super();
+        try {
+            map = C.newInstance();
+        } catch (InstantiationException | IllegalAccessException e) { e.printStackTrace(); }
     }
 
     public void fromList(List<Telefonas> list, Tipas kaipSugrupuoti) {
         mTipas = kaipSugrupuoti;
-        if (size() > 0) {
-            clear();
+        if (map.size() > 0) {
+            map.clear();
         }
         for (Telefonas tel : list) {
             add(tel);
@@ -36,22 +42,22 @@ public class SugrupuotiTelefonai extends HashMap<String, List<Telefonas>> {
     public void add(Telefonas tel) {
         switch (mTipas) {
             case GAMINTOJAS:
-                if (!containsKey(tel.getGamintojas())) {
-                    put(tel.getGamintojas(), new ArrayList<>());
+                if (!map.containsKey(tel.getGamintojas())) {
+                    map.put(tel.getGamintojas(), new ArrayList<>());
                 }
-                get(tel.getGamintojas()).add(tel);
+                map.get(tel.getGamintojas()).add(tel);
                 break;
             case MODELIS:
-                if (!containsKey(tel.getModelis())) {
-                    put(tel.getModelis(), new ArrayList<>());
+                if (!map.containsKey(tel.getModelis())) {
+                    map.put(tel.getModelis(), new ArrayList<>());
                 }
-                get(tel.getModelis()).add(tel);
+                map.get(tel.getModelis()).add(tel);
                 break;
             case NUPIRKIMO_METAI:
-                if (!containsKey(String.valueOf(tel.getNupirkimoMetai()))) {
-                    put(String.valueOf(tel.getNupirkimoMetai()), new ArrayList<>());
+                if (!map.containsKey(String.valueOf(tel.getNupirkimoMetai()))) {
+                    map.put(String.valueOf(tel.getNupirkimoMetai()), new ArrayList<>());
                 }
-                get(String.valueOf(tel.getNupirkimoMetai())).add(tel);
+                map.get(String.valueOf(tel.getNupirkimoMetai())).add(tel);
                 break;
         }
     }
@@ -60,8 +66,8 @@ public class SugrupuotiTelefonai extends HashMap<String, List<Telefonas>> {
         mTipas = kaipSugrupuoti;
         try {
             Scanner scanner = new Scanner(file);
-            if (size() > 0) {
-                clear();
+            if (map.size() > 0) {
+                map.clear();
             }
             while (scanner.hasNextLine()) {
                 String data = scanner.nextLine();
@@ -74,15 +80,15 @@ public class SugrupuotiTelefonai extends HashMap<String, List<Telefonas>> {
     }
 
     public List<Telefonas> getGroup(String group) {
-        return get(group);
+        return map.get(group);
     }
 
     public Iterator<Map.Entry<String, List<Telefonas>>> getIterator() {
-        return entrySet().iterator();
+        return map.entrySet().iterator();
     }
 
     public void forEach(final Code code) {
-        forEach((s, tel) -> {
+        map.forEach((s, tel) -> {
             for (Telefonas t : tel) {
                 code.run(t);
             }

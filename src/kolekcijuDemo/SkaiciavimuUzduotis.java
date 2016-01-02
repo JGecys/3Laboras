@@ -7,8 +7,8 @@ import java.util.*;
  */
 public class SkaiciavimuUzduotis {
 
-    List<Failas> visiFailai    = new LinkedList<Failas>();
-    List<Automobilis> visiAuto = new LinkedList<Automobilis>();
+    List<Failas> visiFailai    = new LinkedList<>();
+    List<Automobilis> visiAuto = new LinkedList<>();
     /**************************************************************************
      * Metodas skirtas rasti visiems failams, esantiems nurodytoje direktorijoje
      * ir giliau pagal hierarchinę priklausomybę, t.y. 
@@ -28,8 +28,7 @@ public class SkaiciavimuUzduotis {
      */
     public void skaičiuotiAtskirusFailųTipus() {
        // panaudojant Map struktūrą, randa skirtingus failų tipus
-        Map<String, SumosFailoTipo> failoTipai =
-                new TreeMap<String, SumosFailoTipo>();
+        Map<String, SumosFailoTipo> failoTipai = new TreeMap<>();
         SumosFailoTipo sum1;
 
         for (Failas f : visiFailai) {
@@ -108,7 +107,7 @@ public class SkaiciavimuUzduotis {
    }
    public void patikrintiMetodus(){
       // pradžioje surenka visus failus, esančius nurodytame folderyje
-      rastiVisusFailus(0,new File(".")); // tai projekto folderis
+      rastiVisusFailus(0,new File("./src/")); // tai projekto folderis
       // gali būti ir bet koks kitas, rekomenduojama sukurti specialų
 //      rastiVisusFailus(0,new File("D:/Studentas/SpecTyrimas/"));
       for(Failas f: visiFailai) // pateikiami visi rasti failai

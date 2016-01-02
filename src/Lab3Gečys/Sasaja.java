@@ -1,36 +1,36 @@
 package Lab3Gečys;
 
 import Lab2Gečys.Telefonas;
-import sasajaSuMeniu.AutomobiliuApskaita;
+import org.omg.CORBA.Environment;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableRowSorter;
+import javax.swing.table.*;
 import java.awt.*;
-import java.awt.List;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.Timer;
 
 /**
  * Created by Jurgis on 2015-10-08.
  */
-public class Sasaja extends JFrame {
+public class Sasaja extends JFrame implements NaujasTelefonasSasaja.OnRegisterListener {
 
     private final JMenuBar meniuBaras = new JMenuBar();
     private Container sasajosLangoTurinys;
-    private final JTextArea taInformacija = new JTextArea(20, 50);
-    private final JScrollPane zona = new JScrollPane(taInformacija);
-    private final JLabel laAntraste = new JLabel("Rezultatai");
+    private final JTextArea taInformacija = new JTextArea(20, 30);
+    private final JScrollPane rightPanel = new JScrollPane(taInformacija, ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
     private final JPanel paInfo = new JPanel();            // duomenų ir rezultatų panelis
-    private JMenuItem miMarkė;
+    private JMenuItem miGamintojas;
     private JMenuItem miKaina;
+    private JMenuItem mVisi;
+    private JMenuItem mRegistruoti;
+    private MyTableModel tableModel;
+    private JTable lentelė = new JTable();
+    private JLabel titleLabel = new JLabel("Visi Telelfonai", SwingConstants.CENTER);
 
-    private AutomobiliuApskaita apskaita = new AutomobiliuApskaita(); // metodų klasės objektas
+    //    private AutomobiliuApskaita apskaita = new AutomobiliuApskaita(); // metodų klasės objektas
     private TelefonuDuomenys duomenys = new TelefonuDuomenys();
 
     /**
@@ -45,9 +45,11 @@ public class Sasaja extends JFrame {
         duomenys.setUpdateListener((tel -> taInformacija.append(tel.toString() + '\n')));
 
         meniuIdiegimas();
+        InitializeTable();
 
-        miMarkė.setEnabled(false);    // neaktyvi, nes nėra duomenų (failas nenuskaitytas)
+        miGamintojas.setEnabled(false);    // neaktyvi, nes nėra duomenų (failas nenuskaitytas)
         miKaina.setEnabled(false);    // neaktyvi
+        this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
     }
 
     /**
@@ -55,6 +57,7 @@ public class Sasaja extends JFrame {
      * Sudėtingesni meniu komandos veiksmai realizuoti atskirais metodais ar atskira klase.
      */
     private void meniuIdiegimas() {
+        this.setMinimumSize(new Dimension(800, 500));
         setJMenuBar(meniuBaras);
         JMenu mFailai = new JMenu("Failai");
         meniuBaras.add(mFailai);
@@ -76,17 +79,31 @@ public class Sasaja extends JFrame {
         // kadangi išėjimo iš programos metodas trumpas, rašome vietoje
         miBaigti.addActionListener((ActionEvent e) -> System.exit(0));
 
+        mVisi = new JMenuItem("Rodyti visus elementus");
+        mVisi.setEnabled(false);
+        mRegistruoti = new JMenuItem("Registracija");
+        mRegistruoti.setEnabled(false);
+        mRegistruoti.addActionListener(e1 -> {
+            NaujasTelefonasSasaja naujas = new NaujasTelefonasSasaja();
+            naujas.SetOnRegisterListener(this);
+        });
+        mAuto.add(mVisi);
+        mAuto.add(mRegistruoti);
+        mVisi.addActionListener(e -> {
+            ((MyTableModel) lentelė.getModel()).showAll();
+        });
+
         //	Grupė "Automobiliu apskaita"
-        miMarkė = new JMenuItem("Atranka pagal modelį…");
-        mAuto.add(miMarkė);
-        miMarkė.addActionListener(this::atrankaPagalMarke);
+        miGamintojas = new JMenuItem("Atranka pagal modelį…");
+        mAuto.add(miGamintojas);
+        miGamintojas.addActionListener(this::atrankaPagalMarke);
 
         miKaina = new JMenuItem("Surikiuoja pagal kainą");
         mAuto.add(miKaina);
         miKaina.addActionListener((ActionEvent event) -> {
-            apskaita.rikiuojaPagalKainą(); // Klasės AutomobiliuApskaita metodas
-            taInformacija.append("\n       SURIKIUOTA (pradinis sąrašas):\n");
-            taInformacija.append(apskaita.toString());
+            duomenys.rikiuotiPagalKaina(); // Klasės AutomobiliuApskaita metodas
+            taInformacija.append("\nSurikiuota pagal kaina:\n");
+            taInformacija.append(duomenys.toString());
         });
         taInformacija.setEditable(false);
 
@@ -108,13 +125,54 @@ public class Sasaja extends JFrame {
                         "Apie...", JOptionPane.INFORMATION_MESSAGE));
 
         // Sukuriamas JPanel elementas informacijai išvesti ir padedamas į JFrame langą.
-        paInfo.setLayout(new BorderLayout());
-        paInfo.add(laAntraste, BorderLayout.NORTH);
-        paInfo.add(zona, BorderLayout.CENTER);
+        BorderLayout borderLayout = new BorderLayout();
+        borderLayout.setVgap(8);
+        borderLayout.setHgap(8);
+        paInfo.setLayout(borderLayout);
+        rightPanel.setPreferredSize(new Dimension(300, 500));
+        paInfo.add(rightPanel, BorderLayout.EAST);
 
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE); // kad veiktų lango uždarymas ("kryžiukas")
 
     } // Metodo meniuIdiegimas pabaiga
+
+    private void InitializeTable(){
+        JPanel pa = new JPanel();
+        JTextField editTextField = new JTextField();
+        pa.setLayout(new BorderLayout());
+        tableModel = new MyTableModel(lentelė, duomenys);
+        lentelė.setModel(tableModel);
+        JScrollPane juosta = new JScrollPane(lentelė);
+        pa.add(titleLabel, BorderLayout.NORTH);
+        pa.add(juosta, BorderLayout.CENTER);
+        lentelė.setRowSorter(new TableRowSorter(tableModel)); // Rikiavimui pagal stulpelius su pele
+        DefaultCellEditor editor = new DefaultCellEditor(editTextField);
+        editor.setClickCountToStart(1);
+        lentelė.setCellEditor(editor);
+        DefaultTableCellRenderer tableCellRenderer = new DefaultTableCellRenderer();
+        tableCellRenderer.setHorizontalAlignment(JLabel.RIGHT);
+        lentelė.getColumnModel().getColumn(2).setCellRenderer(tableCellRenderer);
+        lentelė.getColumnModel().getColumn(3).setCellRenderer(tableCellRenderer);
+        lentelė.getColumnModel().getColumn(4).setCellRenderer(tableCellRenderer);
+
+        lentelė.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                Point p = e.getPoint();
+                int row = lentelė.rowAtPoint(p);
+                int col = lentelė.columnAtPoint(p);
+                if (lentelė.isCellEditable(row, col)) {
+                    TableCellEditor editor = lentelė.getCellEditor(row, col);
+                    if (editor instanceof DefaultCellEditor) {
+                        DefaultCellEditor ce = (DefaultCellEditor) editor;
+                        if (e.getClickCount() < ce.getClickCountToStart()) return;
+                    }
+                    lentelė.editCellAt(row, col);
+                }
+            }
+        });
+        paInfo.add(pa, BorderLayout.CENTER);
+    }
 
     /**
      * Metodas yra kviečiamas vykdant meniu punktą "Skaityti iš failo..."
@@ -123,7 +181,7 @@ public class Sasaja extends JFrame {
      *          (kviečiant šį metodą su lambda, jo antraštė gali būti ir be šio parametro).
      */
     public void veiksmaiSkaitantFailą(ActionEvent e) {
-        JFileChooser fc = new JFileChooser(".");  // "." tam, kad rodytų projekto katalogą
+        JFileChooser fc = new JFileChooser("./Duomenys/");  // "." tam, kad rodytų projekto katalogą
         fc.setDialogTitle("Atidaryti failą skaitymui");
         fc.setApproveButtonText("Atidaryti");
         int rez = fc.showOpenDialog(Sasaja.this);
@@ -133,7 +191,7 @@ public class Sasaja extends JFrame {
             if (!paInfo.isShowing()) {
                 // Jei JPanel objektas paInfo dar neįdėtas į JFrame
                 sasajosLangoTurinys = getContentPane();
-                sasajosLangoTurinys.setLayout(new FlowLayout());
+//                sasajosLangoTurinys.setLayout(new FlowLayout());
                 sasajosLangoTurinys.add(paInfo);
                 validate();
             }
@@ -141,13 +199,11 @@ public class Sasaja extends JFrame {
 
             File f1 = fc.getSelectedFile();
             duomenys.fromFile(f1);
-            SugrupuotiTelefonai sugrupuoti = new SugrupuotiTelefonai();
-            sugrupuoti.fromList(duomenys, SugrupuotiTelefonai.Tipas.GAMINTOJAS);
-            System.out.println(sugrupuoti);
 
-
-            miMarkė.setEnabled(true);    // aktyvi - duomenys nuskaityti
+            mVisi.setEnabled(true);
+            miGamintojas.setEnabled(true);    // aktyvi - duomenys nuskaityti
             miKaina.setEnabled(true);
+            mRegistruoti.setEnabled(true);
         } else if (rez == JFileChooser.CANCEL_OPTION) {
             JOptionPane.showMessageDialog(Sasaja.this, // kad rodyti sąsajos lango centre (null rodytų ekrano centre)
                     "Skaitymo atsisakyta (paspaustas ESC arba Cancel)",
@@ -161,46 +217,19 @@ public class Sasaja extends JFrame {
      * @param e klasės ActionEvent objektas.
      */
     public void atrankaPagalMarke(ActionEvent e) {
-        String markė = JOptionPane.showInputDialog(Sasaja.this, "Įveskite markę", // vietoje SasajaSuMeniu.this parašius null, įvedimo langas nebus sąsajos lange
-                "Tekstas", JOptionPane.WARNING_MESSAGE);
-        if (markė == null) // Kai pasirinkta Cancel arba Esc
+
+        String gamintojas = JOptionPane.showInputDialog(Sasaja.this, "Įveskite gamintoją:", // vietoje SasajaSuMeniu.this parašius null, įvedimo langas nebus sąsajos lange
+                "", JOptionPane.WARNING_MESSAGE);
+        if (gamintojas == null) // Kai pasirinkta Cancel arba Esc
             return;
 
-        // PIRMAS variantas: Atrinktieji įrašai išvedami į tą patį JTextArea elementą:
-        taInformacija.append("\n  Atrinkti " + markė + " markės automobiliai :\n");
-        apskaita.atrinktiPagalMarkę(markė, taInformacija);
-
-        // ANTRAS variantas: Atrinktieji įrašai išvedami į atskitą JFrame objektą lentele JTable:
-        JFrame fr = new JFrame();
-        JPanel pa = new JPanel();
-        pa.setLayout(new BorderLayout());
-        JTable lentelė = new JTable();
-        String stulpeliuVardai[] = {"Modelis", "Metai", "Rida", "Kaina"};
-        DefaultTableModel lentelėsModelis = (DefaultTableModel) lentelė.getModel();
-        lentelė.setModel(lentelėsModelis);
-        JScrollPane juosta = new JScrollPane(lentelė);
-        pa.add(new JLabel("Atrinkti " + markė + " markės automobiliai:", SwingConstants.CENTER), BorderLayout.NORTH);
-        pa.add(juosta, BorderLayout.CENTER);
-        lentelė.setRowSorter(new TableRowSorter(lentelėsModelis)); // Rikiavimui pagal stulpelius su pele
-
-        // Stulpelių vardai ir informacija:
-        lentelėsModelis.setColumnIdentifiers(stulpeliuVardai);
-        boolean b = apskaita.atrinktiPagalMarkęLentele(lentelėsModelis, markė);
-        if (b) {
-            // Jei įrašų atrinkta
-            fr.add(pa);
-            fr.setSize(300, 350);
-            // Dėsim JTable lentelę į sąsajos lango centrą (kitaip padės į ekrano centrą):
-            Dimension dydis = Sasaja.this.getSize();    // sąsajos lango gydis
-            Point vieta = Sasaja.this.getLocation();    // sąsajos lango vieta (kairys-viršutinis kampas)
-            fr.setLocation((vieta.x + dydis.width / 2) - fr.getSize().width / 2,
-                    (vieta.y + dydis.height / 2) - fr.getSize().height / 2);
-            fr.setVisible(true);
-        } else {
-            JOptionPane.showMessageDialog(Sasaja.this,
-                    "<" + markė + "> markės automobilių nerasta.", "Atranka", JOptionPane.WARNING_MESSAGE);
-
+        if(tableModel.AtrinktiPagalGamintoja(gamintojas)){
+            titleLabel.setText("Atrinkti " + gamintojas + " gamintojo telefonai:");
+            lentelė.revalidate();
+        }else{
+            titleLabel.setText("Tokiu telefonu nerasta.");
         }
+
     } // Metodo atrankaPagalMarke pabaiga
 
     /**
@@ -221,6 +250,11 @@ public class Sasaja extends JFrame {
                     "Vykdomasis failas <" + programa + "> nerastas",
                     "Klaida", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    @Override
+    public void OnRegister(Telefonas t) {
+        tableModel.PridetiTelefona(t);
     }
 
     /**

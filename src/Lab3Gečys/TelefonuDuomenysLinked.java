@@ -11,15 +11,15 @@ import java.util.*;
 /**
  * Created by Jurgis on 2015-10-15.
  */
-public class TelefonuDuomenys extends ArrayList<Telefonas> {
+public class TelefonuDuomenysLinked extends LinkedList<Telefonas> {
 
     private OnListUpdate updateListener = null;
 
-    public TelefonuDuomenys() {
+    public TelefonuDuomenysLinked() {
         super();
     }
 
-    public TelefonuDuomenys(List<Telefonas> list){
+    public TelefonuDuomenysLinked(List<Telefonas> list){
         super(list);
     }
 
